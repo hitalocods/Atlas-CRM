@@ -21,6 +21,9 @@ export type Project = {
   id: string;
   title: string;
   client: string;
+  value: number;
+  monthlyValue: number;
+  contractMonths: number;
   status: ProjectStatus;
   priority: Priority;
   deadline: string;
@@ -34,11 +37,17 @@ export type Project = {
 export type Task = {
   id: string;
   title: string;
+  description?: string;
   projectId?: string;
   status: TaskStatus;
   priority: Priority;
   due: string;
   reminder: string;
+  checklist?: Array<{
+    id: string;
+    title: string;
+    done: boolean;
+  }>;
 };
 
 export type FinanceRecord = {
