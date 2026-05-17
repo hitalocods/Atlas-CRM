@@ -16,6 +16,8 @@ import { Input } from "@/components/ui/input";
 import { formatCurrency } from "@/lib/format";
 import { useI18n } from "@/providers/language-provider";
 import { createClient } from "@/services/supabase/browser";
+import { hasSupabaseEnv } from "@/services/supabase/env";
+import { useAtlasStore } from "@/stores/atlas-store";
 import type { Database } from "@/types/database";
 import type { Priority, Project, ProjectStatus } from "@/types/domain";
 
@@ -180,7 +182,12 @@ function ProjectColumn({
 
 export function ProjectsPage() {
   const { t } = useI18n();
-  const supabase = React.useMemo(() => createClient() as any, []);
+  const demoProjects = useAtlasStore((state) => state.projects);
+  const addDemoProject = useAtlasStore((state) => state.addProject);
+  const updateDemoProject = useAtlasStore((state) => state.updateProject);
+  const moveDemoProject = useAtlasStore((state) => state.moveProject);
+  const hasRemoteProjects = hasSupabaseEnv();
+  const supabase = React.useMemo(() => (hasRemoteProjects ? (createClient() as any) : null), [hasRemoteProjects]);
   const [projects, setProjects] = React.useState<Project[]>([]);
   const [userId, setUserId] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(true);
@@ -210,6 +217,13 @@ export function ProjectsPage() {
     let active = true;
 
     async function loadProjects() {
+      if (!supabase) {
+        setProjects(demoProjects);
+        setLoading(false);
+        setError(null);
+        return;
+      }
+
       setLoading(true);
       setError(null);
 
@@ -250,7 +264,7 @@ export function ProjectsPage() {
     return () => {
       active = false;
     };
-  }, [supabase]);
+  }, [demoProjects, supabase]);
 
   async function onDragEnd(event: DragEndEvent) {
     const projectId = String(event.active.id);
@@ -258,6 +272,12 @@ export function ProjectsPage() {
     if (!overId) return;
     const status = columns.some((column) => column.id === overId) ? overId : projects.find((project) => project.id === overId)?.status;
     if (!status) return;
+
+    if (!supabase) {
+      moveDemoProject(projectId, status as ProjectStatus);
+      setProjects((current) => current.map((project) => (project.id === projectId ? { ...project, status: status as ProjectStatus } : project)));
+      return;
+    }
 
     const previousProjects = projects;
     setProjects((current) => current.map((project) => (project.id === projectId ? { ...project, status: status as ProjectStatus } : project)));
@@ -274,7 +294,12 @@ export function ProjectsPage() {
   }
 
   async function submitProject(formData: FormData) {
-    if (!userId) {
+    if (!supabase && !editing) {
+      setError("Project editor is not ready.");
+      return;
+    }
+
+    if (supabase && !userId) {
       setError("User session not found.");
       return;
     }
@@ -298,6 +323,19 @@ export function ProjectsPage() {
       attachments: editing?.attachments ?? 0,
       subtasks: editing?.subtasks ?? 0,
     };
+
+    if (!supabase) {
+      if (editing?.id) {
+        updateDemoProject(project);
+        setProjects((current) => current.map((item) => (item.id === project.id ? project : item)));
+      } else {
+        addDemoProject(project);
+        setProjects((current) => [project, ...current]);
+      }
+      setEditing(null);
+      setSaving(false);
+      return;
+    }
 
     if (editing?.id) {
       const { data, error: updateError } = await supabase
