@@ -4,6 +4,7 @@ type Table<Row, Insert = Partial<Row>, Update = Partial<Row>> = {
   Row: Row;
   Insert: Insert;
   Update: Update;
+  Relationships: [];
 };
 
 export type Database = {
@@ -36,8 +37,12 @@ export type Database = {
         id: string;
         user_id: string;
         client_id: string | null;
+        client: string;
         title: string;
         description: string | null;
+        value: number;
+        monthly_value: number;
+        contract_months: number;
         status: string;
         priority: string;
         deadline: string | null;
