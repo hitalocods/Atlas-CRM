@@ -97,7 +97,7 @@ function ProjectCard({
       style={style}
       onMouseDown={() => onActivate(project.id)}
       onFocus={() => onActivate(project.id)}
-      className={`relative rounded-lg border border-border bg-card p-3 shadow-sm transition-colors hover:bg-accent/40 ${isDragging ? "scale-[1.01] shadow-lg" : ""}`}
+      className={`relative max-w-full overflow-hidden rounded-lg border border-border bg-card p-3 shadow-sm transition-colors hover:bg-accent/40 ${isDragging ? "scale-[1.01] shadow-lg" : ""}`}
     >
       <div className="mb-2 flex items-start justify-between gap-2">
         <button
@@ -158,8 +158,8 @@ function ProjectCard({
         <div className="h-full rounded-full bg-primary/70" style={{ width: `${project.progress}%` }} />
       </div>
       <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-        <span className="flex items-center gap-1"><CalendarDays className="size-3" />{project.deadline}</span>
-        <span className="flex items-center gap-2">
+        <span className="flex min-w-0 items-center gap-1"><CalendarDays className="size-3 shrink-0" />{project.deadline}</span>
+        <span className="flex min-w-0 flex-wrap items-center justify-end gap-x-2 gap-y-1">
           <span className="flex items-center gap-1"><DollarSign className="size-3" />{formatCurrency(project.value ?? 0)}</span>
           <span className="flex items-center gap-1">{formatCurrency(project.monthlyValue ?? 0)}/{monthLabel}</span>
           <span className="flex items-center gap-1"><MessageSquare className="size-3" />{project.comments}</span>
@@ -198,7 +198,7 @@ function ProjectColumn({
   const { setNodeRef, isOver } = useDroppable({ id: column.id });
 
   return (
-    <Card ref={setNodeRef} className={`min-w-72 transition-colors ${isOver ? "bg-accent/30" : ""}`}>
+    <Card ref={setNodeRef} className={`w-72 shrink-0 transition-colors ${isOver ? "bg-accent/30" : ""}`}>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle>{column.title}</CardTitle>
@@ -505,7 +505,7 @@ export function ProjectsPage() {
 
       {mounted ? (
         <DndContext sensors={sensors} onDragEnd={onDragEnd}>
-          <section className="grid gap-3 overflow-x-auto pb-2 xl:grid-cols-5">
+          <section className="flex gap-3 overflow-x-auto pb-2">
             {columns.map((column) => (
               <ProjectColumn
                 key={column.id}
@@ -532,9 +532,9 @@ export function ProjectsPage() {
           ) : null}
         </DndContext>
       ) : (
-        <section className="grid gap-3 overflow-x-auto pb-2 xl:grid-cols-5">
+        <section className="flex gap-3 overflow-x-auto pb-2">
           {columns.map((column) => (
-            <Card key={column.id} className="min-h-96 min-w-72" />
+            <Card key={column.id} className="min-h-96 w-72 shrink-0" />
           ))}
         </section>
       )}
