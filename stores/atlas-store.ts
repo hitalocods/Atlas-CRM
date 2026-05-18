@@ -24,6 +24,7 @@ type AtlasState = {
   removeClient: (id: string) => void;
   addProject: (project: Project) => void;
   updateProject: (project: Project) => void;
+  removeProject: (id: string) => void;
   moveProject: (id: string, status: ProjectStatus) => void;
   addTask: (task: Task) => void;
   updateTask: (task: Task) => void;
@@ -71,6 +72,11 @@ export const useAtlasStore = create<AtlasState>()(
         set((state) => ({
           projects: state.projects.map((item) => (item.id === project.id ? project : item)),
           activities: [{ id: id("ac"), type: "project", title: `${project.title} updated`, detail: "Project record changed", createdAt: "Just now" }, ...state.activities],
+        })),
+      removeProject: (projectId) =>
+        set((state) => ({
+          projects: state.projects.filter((project) => project.id !== projectId),
+          activities: [{ id: id("ac"), type: "project", title: "Project deleted", detail: "Project removed from board", createdAt: "Just now" }, ...state.activities],
         })),
       moveProject: (projectId, status) =>
         set((state) => ({

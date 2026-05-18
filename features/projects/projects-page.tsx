@@ -4,7 +4,7 @@ import * as React from "react";
 import { DndContext, type DragEndEvent, PointerSensor, useDroppable, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { CalendarDays, CirclePlus, DollarSign, MessageSquare, Paperclip, Pencil, StickyNote } from "lucide-react";
+import { CalendarDays, CirclePlus, DollarSign, MessageSquare, Paperclip, Pencil, StickyNote, Trash2 } from "lucide-react";
 import { MetricCard } from "@/components/product/metric-card";
 import { PageHeader } from "@/components/product/page-header";
 import { PriorityBadge, ProjectStatusBadge } from "@/components/product/status-badge";
@@ -66,24 +66,38 @@ function mapProject(row: ProjectRow): Project {
 function ProjectCard({
   project,
   onEdit,
+  onDelete,
+  onActivate,
   editLabel,
+  deleteLabel,
   priorityLabel,
   monthLabel,
+  isActive,
 }: {
   project: Project;
   onEdit: (project: Project) => void;
+  onDelete: (project: Project) => void;
+  onActivate: (projectId: string) => void;
   editLabel: string;
+  deleteLabel: string;
   priorityLabel: string;
   monthLabel: string;
+  isActive: boolean;
 }) {
   const { attributes, listeners, setActivatorNodeRef, setNodeRef, transform, transition, isDragging } = useSortable({ id: project.id });
-  const style = { transform: CSS.Transform.toString(transform), transition };
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 50 : isActive ? 30 : 1,
+  };
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`rounded-lg border border-border bg-card p-3 shadow-sm transition-colors hover:bg-accent/40 ${isDragging ? "opacity-70" : ""}`}
+      onMouseDown={() => onActivate(project.id)}
+      onFocus={() => onActivate(project.id)}
+      className={`relative rounded-lg border border-border bg-card p-3 shadow-sm transition-colors hover:bg-accent/40 ${isDragging ? "scale-[1.01] shadow-lg" : ""} ${isActive ? "ring-1 ring-primary/40" : ""}`}
     >
       <div className="mb-2 flex items-start justify-between gap-2">
         <button
@@ -107,11 +121,27 @@ function ProjectCard({
             title={editLabel}
             onClick={(event) => {
               event.stopPropagation();
+              onActivate(project.id);
               onEdit(project);
             }}
           >
             <Pencil className="size-3.5" />
             <span className="hidden sm:inline">{editLabel}</span>
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="size-7"
+            aria-label={deleteLabel}
+            title={deleteLabel}
+            onClick={(event) => {
+              event.stopPropagation();
+              onActivate(project.id);
+              onDelete(project);
+            }}
+          >
+            <Trash2 className="size-3.5" />
           </Button>
         </div>
       </div>
@@ -144,7 +174,11 @@ function ProjectColumn({
   column,
   projects,
   onEdit,
+  onDelete,
+  onActivate,
+  activeProjectId,
   editLabel,
+  deleteLabel,
   priorityLabel,
   monthLabel,
   statusLabel,
@@ -152,7 +186,11 @@ function ProjectColumn({
   column: { id: ProjectStatus; title: string; description: string };
   projects: Project[];
   onEdit: (project: Project) => void;
+  onDelete: (project: Project) => void;
+  onActivate: (projectId: string) => void;
+  activeProjectId: string | null;
   editLabel: string;
+  deleteLabel: string;
   priorityLabel: (priority: Priority) => string;
   monthLabel: string;
   statusLabel: (status: ProjectStatus) => string;
@@ -170,13 +208,17 @@ function ProjectColumn({
       </CardHeader>
       <CardContent>
         <SortableContext items={projects.map((project) => project.id)} strategy={verticalListSortingStrategy}>
-          <div className="min-h-80 space-y-2">
+          <div className="relative min-h-80 space-y-2">
             {projects.map((project) => (
               <ProjectCard
                 key={project.id}
                 project={project}
                 onEdit={onEdit}
+                onDelete={onDelete}
+                onActivate={onActivate}
+                isActive={activeProjectId === project.id}
                 editLabel={editLabel}
+                deleteLabel={deleteLabel}
                 priorityLabel={priorityLabel(project.priority)}
                 monthLabel={monthLabel}
               />
@@ -193,6 +235,7 @@ export function ProjectsPage() {
   const demoProjects = useAtlasStore((state) => state.projects);
   const addDemoProject = useAtlasStore((state) => state.addProject);
   const updateDemoProject = useAtlasStore((state) => state.updateProject);
+  const removeDemoProject = useAtlasStore((state) => state.removeProject);
   const moveDemoProject = useAtlasStore((state) => state.moveProject);
   const hasRemoteProjects = hasSupabaseEnv();
   const supabase = React.useMemo(() => (hasRemoteProjects ? (createClient() as any) : null), [hasRemoteProjects]);
@@ -203,6 +246,7 @@ export function ProjectsPage() {
   const [error, setError] = React.useState<string | null>(null);
   const [mounted, setMounted] = React.useState(false);
   const [editing, setEditing] = React.useState<Project | null>(null);
+  const [activeProjectId, setActiveProjectId] = React.useState<string | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
   const totalValue = projects.reduce((sum, project) => sum + (project.value ?? 0), 0);
   const monthlyValue = projects.reduce((sum, project) => sum + (project.monthlyValue ?? 0), 0);
@@ -405,6 +449,38 @@ export function ProjectsPage() {
     setSaving(false);
   }
 
+  async function deleteProject(project: Project) {
+    const confirmed = window.confirm(`Excluir "${project.title}"?`);
+    if (!confirmed) return;
+
+    setSaving(true);
+    setError(null);
+
+    if (!supabase) {
+      removeDemoProject(project.id);
+      setProjects((current) => current.filter((item) => item.id !== project.id));
+      setEditing((current) => (current?.id === project.id ? null : current));
+      setActiveProjectId((current) => (current === project.id ? null : current));
+      setSaving(false);
+      return;
+    }
+
+    const previousProjects = projects;
+    setProjects((current) => current.filter((item) => item.id !== project.id));
+
+    const { error: deleteError } = await supabase.from("projects").delete().eq("id", project.id);
+
+    if (deleteError) {
+      setProjects(previousProjects);
+      setError(deleteError.message);
+    } else {
+      setEditing((current) => (current?.id === project.id ? null : current));
+      setActiveProjectId((current) => (current === project.id ? null : current));
+    }
+
+    setSaving(false);
+  }
+
   return (
     <div className="mx-auto flex max-w-[1500px] flex-col gap-4">
       <PageHeader
@@ -436,7 +512,11 @@ export function ProjectsPage() {
                 column={column}
                 projects={projects.filter((project) => project.status === column.id)}
                 onEdit={setEditing}
+                onDelete={deleteProject}
+                onActivate={setActiveProjectId}
+                activeProjectId={activeProjectId}
                 editLabel={t("common.edit")}
+                deleteLabel={t("common.delete")}
                 priorityLabel={priorityLabel}
                 monthLabel={t("projects.month")}
                 statusLabel={statusLabel}
@@ -497,6 +577,12 @@ export function ProjectsPage() {
                 className="min-h-32 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               />
               <DialogFooter>
+                {editing.id ? (
+                  <Button type="button" variant="outline" disabled={saving} onClick={() => deleteProject(editing)}>
+                    <Trash2 className="size-3.5" />
+                    {t("common.delete")}
+                  </Button>
+                ) : null}
                 <Button type="button" variant="outline" onClick={() => setEditing(null)}>{t("common.cancel")}</Button>
                 <Button type="submit" disabled={saving}>{saving ? t("common.saving") : editing.id ? t("projects.saveProject") : t("projects.createProject")}</Button>
               </DialogFooter>
