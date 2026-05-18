@@ -39,6 +39,7 @@ export const initialClients: Client[] = [
 export const initialProjects: Project[] = [
   {
     id: "pr_atlas",
+    clientId: "",
     title: "Atlas SaaS Foundation",
     client: "Internal",
     notes: "Links, tech stack and decisions for the Atlas CRM live here.",
@@ -56,6 +57,7 @@ export const initialProjects: Project[] = [
   },
   {
     id: "pr_creator",
+    clientId: "cl_northstar",
     title: "Creator Launch Kit",
     client: "Northstar Labs",
     notes: "Landing page, checkout, launch assets and brand references.",
@@ -73,6 +75,7 @@ export const initialProjects: Project[] = [
   },
   {
     id: "pr_ops",
+    clientId: "cl_arc",
     title: "Retainer Ops Board",
     client: "Arc Studio",
     notes: "CRM workflow, automation ideas and client portal references.",
@@ -90,6 +93,7 @@ export const initialProjects: Project[] = [
   },
   {
     id: "pr_finance",
+    clientId: "",
     title: "Finance Command Center",
     client: "Personal",
     notes: "Reports, invoices, tool subscriptions and finance dashboard notes.",

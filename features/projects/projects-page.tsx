@@ -19,12 +19,15 @@ import { createClient } from "@/services/supabase/browser";
 import { hasSupabaseEnv } from "@/services/supabase/env";
 import { useAtlasStore } from "@/stores/atlas-store";
 import type { Database } from "@/types/database";
-import type { Priority, Project, ProjectStatus } from "@/types/domain";
+import type { Client, Priority, Project, ProjectStatus } from "@/types/domain";
 
 type ProjectRow = Database["public"]["Tables"]["projects"]["Row"];
+type ClientRow = Database["public"]["Tables"]["clients"]["Row"];
+type ProjectClient = Pick<Client, "id" | "name" | "company"> & { source: "local" | "remote" };
 
 const blankProject: Project = {
   id: "",
+  clientId: "",
   title: "",
   client: "",
   notes: "",
@@ -46,6 +49,7 @@ function mapProject(row: ProjectRow): Project {
 
   return {
     id: row.id,
+    clientId: row.client_id ?? "",
     title: row.title,
     client: row.client,
     notes: row.description ?? "",
@@ -233,6 +237,7 @@ function ProjectColumn({
 export function ProjectsPage() {
   const { t } = useI18n();
   const demoProjects = useAtlasStore((state) => state.projects);
+  const demoClients = useAtlasStore((state) => state.clients);
   const addDemoProject = useAtlasStore((state) => state.addProject);
   const updateDemoProject = useAtlasStore((state) => state.updateProject);
   const removeDemoProject = useAtlasStore((state) => state.removeProject);
@@ -240,6 +245,7 @@ export function ProjectsPage() {
   const hasRemoteProjects = hasSupabaseEnv();
   const supabase = React.useMemo(() => (hasRemoteProjects ? (createClient() as any) : null), [hasRemoteProjects]);
   const [projects, setProjects] = React.useState<Project[]>([]);
+  const [clients, setClients] = React.useState<ProjectClient[]>([]);
   const [userId, setUserId] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
@@ -260,6 +266,11 @@ export function ProjectsPage() {
   ];
   const priorityLabel = (priority: Priority) => t(`priority.${priority}` as const);
   const statusLabel = (projectStatus: ProjectStatus) => t(`status.${projectStatus}` as const);
+  const selectedClientId = editing?.clientId || clients.find((client) => client.company === editing?.client)?.id || "";
+  const localClientOptions = React.useMemo(
+    () => demoClients.map((client) => ({ id: client.id, name: client.name, company: client.company, source: "local" as const })),
+    [demoClients],
+  );
 
   React.useEffect(() => {
     setMounted(true);
@@ -271,6 +282,7 @@ export function ProjectsPage() {
     async function loadProjects() {
       if (!supabase) {
         setProjects(demoProjects);
+        setClients(localClientOptions);
         setLoading(false);
         setError(null);
         return;
@@ -294,13 +306,39 @@ export function ProjectsPage() {
 
       setUserId(user.id);
 
-      const { data, error: projectsError } = await supabase
-        .from("projects")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
+      const [clientsResponse, projectsResponse] = await Promise.all([
+        supabase
+          .from("clients")
+          .select("id, name, company")
+          .eq("user_id", user.id)
+          .order("company", { ascending: true }),
+        supabase
+          .from("projects")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false }),
+      ]);
 
       if (!active) return;
+
+      const { data: clientsData, error: clientsError } = clientsResponse;
+      const { data, error: projectsError } = projectsResponse;
+
+      if (clientsError) {
+        setError(clientsError.message);
+      } else {
+        const remoteClients = ((clientsData ?? []) as ClientRow[]).map((client) => ({
+          id: client.id,
+          name: client.name,
+          company: client.company,
+          source: "remote" as const,
+        }));
+        const localOnlyClients = localClientOptions.filter(
+          (localClient) => !remoteClients.some((remoteClient) => remoteClient.company === localClient.company),
+        );
+
+        setClients([...remoteClients, ...localOnlyClients]);
+      }
 
       if (projectsError) {
         setError(projectsError.message);
@@ -316,7 +354,7 @@ export function ProjectsPage() {
     return () => {
       active = false;
     };
-  }, [demoProjects, supabase]);
+  }, [demoProjects, localClientOptions, supabase]);
 
   async function onDragEnd(event: DragEndEvent) {
     const projectId = String(event.active.id);
@@ -359,10 +397,64 @@ export function ProjectsPage() {
     setSaving(true);
     setError(null);
 
+    const clientId = String(formData.get("clientId") || "");
+    const linkedClient = clients.find((client) => client.id === clientId);
+
+    if (!linkedClient) {
+      setError("Select a CRM client before saving this project.");
+      setSaving(false);
+      return;
+    }
+
+    let projectClientId = linkedClient.id;
+    const clientName = linkedClient.company;
+
+    if (supabase && linkedClient.source === "local") {
+      const localClient = demoClients.find((client) => client.id === linkedClient.id);
+
+      if (!localClient) {
+        setError("Client record not found.");
+        setSaving(false);
+        return;
+      }
+
+      const { data: createdClient, error: createClientError } = await supabase
+        .from("clients")
+        .insert({
+          user_id: userId,
+          name: localClient.name,
+          company: localClient.company,
+          email: localClient.email,
+          status: localClient.status,
+          tags: localClient.tags,
+          revenue: localClient.revenue,
+          notes: localClient.notes,
+        })
+        .select("id, name, company")
+        .single();
+
+      if (createClientError || !createdClient) {
+        setError(createClientError?.message ?? "Could not connect this client to Supabase.");
+        setSaving(false);
+        return;
+      }
+
+      const remoteClient = {
+        id: createdClient.id,
+        name: createdClient.name,
+        company: createdClient.company,
+        source: "remote" as const,
+      };
+
+      projectClientId = remoteClient.id;
+      setClients((current) => [remoteClient, ...current.filter((client) => client.id !== linkedClient.id)]);
+    }
+
     const project: Project = {
       id: editing?.id || `pr_${Date.now()}`,
+      clientId: projectClientId,
       title: String(formData.get("title")),
-      client: String(formData.get("client")),
+      client: clientName,
       notes: String(formData.get("notes") || ""),
       value: Number(formData.get("value") || 0),
       monthlyValue: Number(formData.get("monthlyValue") || 0),
@@ -395,6 +487,7 @@ export function ProjectsPage() {
         .from("projects")
         .update({
           title: project.title,
+          client_id: project.clientId || null,
           client: project.client,
           description: project.notes,
           value: project.value,
@@ -422,6 +515,7 @@ export function ProjectsPage() {
         .from("projects")
         .insert({
           user_id: userId,
+          client_id: project.clientId || null,
           title: project.title,
           client: project.client,
           description: project.notes,
@@ -548,7 +642,15 @@ export function ProjectsPage() {
           {editing ? (
             <form action={submitProject} className="space-y-3">
               <Input name="title" defaultValue={editing.title} placeholder={t("projects.projectTitle")} required />
-              <Input name="client" defaultValue={editing.client} placeholder={t("projects.client")} required />
+              <select name="clientId" defaultValue={selectedClientId} required className="h-9 rounded-md border border-input bg-background px-3 text-sm">
+                <option value="">{t("projects.selectClient")}</option>
+                {clients.map((client) => (
+                  <option key={client.id} value={client.id}>
+                    {client.company} - {client.name}
+                  </option>
+                ))}
+              </select>
+              <input type="hidden" name="client" defaultValue={editing.client} />
               <div className="grid gap-3 sm:grid-cols-2">
                 <Input name="value" defaultValue={editing.value} type="number" min="0" step="0.01" placeholder={t("projects.projectValue")} />
                 <Input name="monthlyValue" defaultValue={editing.monthlyValue} type="number" min="0" step="0.01" placeholder={t("projects.monthlyMaintenance")} />

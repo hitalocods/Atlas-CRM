@@ -19,6 +19,7 @@ export type Client = {
 
 export type Project = {
   id: string;
+  clientId?: string;
   title: string;
   client: string;
   notes: string;

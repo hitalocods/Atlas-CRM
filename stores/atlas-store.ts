@@ -106,9 +106,10 @@ export const useAtlasStore = create<AtlasState>()(
     }),
     {
       name: "atlas-store",
-      version: 2,
+      version: 3,
       migrate: (persistedState) => {
         const state = persistedState as Partial<AtlasState>;
+        const clients = state.clients ?? initialClients;
         const tasks = (state.tasks ?? initialTasks).map((task) => {
           const seededTask = initialTasks.find((item) => item.id === task.id);
 
@@ -121,9 +122,11 @@ export const useAtlasStore = create<AtlasState>()(
 
         const projects = (state.projects ?? initialProjects).map((project) => {
           const seededProject = initialProjects.find((item) => item.id === project.id);
+          const linkedClient = clients.find((client) => client.company === project.client);
 
           return {
             ...project,
+            clientId: project.clientId ?? seededProject?.clientId ?? linkedClient?.id ?? "",
             notes: project.notes ?? seededProject?.notes ?? "",
           };
         });
