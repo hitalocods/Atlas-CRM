@@ -4,7 +4,7 @@ import * as React from "react";
 import { DndContext, type DragEndEvent, PointerSensor, useDroppable, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { CalendarDays, CirclePlus, DollarSign, MessageSquare, Paperclip, Pencil } from "lucide-react";
+import { CalendarDays, CirclePlus, DollarSign, MessageSquare, Paperclip, Pencil, StickyNote } from "lucide-react";
 import { MetricCard } from "@/components/product/metric-card";
 import { PageHeader } from "@/components/product/page-header";
 import { PriorityBadge, ProjectStatusBadge } from "@/components/product/status-badge";
@@ -27,6 +27,7 @@ const blankProject: Project = {
   id: "",
   title: "",
   client: "",
+  notes: "",
   value: 0,
   monthlyValue: 0,
   contractMonths: 0,
@@ -47,6 +48,7 @@ function mapProject(row: ProjectRow): Project {
     id: row.id,
     title: row.title,
     client: row.client,
+    notes: row.description ?? "",
     value: Number(row.value ?? 0),
     monthlyValue: Number(row.monthly_value ?? 0),
     contractMonths: Number(row.contract_months ?? 0),
@@ -116,6 +118,12 @@ function ProjectCard({
       <div className="mb-3 flex flex-wrap gap-1">
         {project.labels.map((label) => <Badge key={label} variant="outline">{label}</Badge>)}
       </div>
+      {project.notes ? (
+        <div className="mb-3 line-clamp-2 rounded-md border border-border bg-muted/20 px-2 py-1.5 text-[11px] text-muted-foreground">
+          <StickyNote className="mr-1 inline size-3 align-[-2px]" />
+          {project.notes}
+        </div>
+      ) : null}
       <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-muted">
         <div className="h-full rounded-full bg-primary/70" style={{ width: `${project.progress}%` }} />
       </div>
@@ -311,6 +319,7 @@ export function ProjectsPage() {
       id: editing?.id || `pr_${Date.now()}`,
       title: String(formData.get("title")),
       client: String(formData.get("client")),
+      notes: String(formData.get("notes") || ""),
       value: Number(formData.get("value") || 0),
       monthlyValue: Number(formData.get("monthlyValue") || 0),
       contractMonths: Number(formData.get("contractMonths") || 0),
@@ -343,6 +352,7 @@ export function ProjectsPage() {
         .update({
           title: project.title,
           client: project.client,
+          description: project.notes,
           value: project.value,
           monthly_value: project.monthlyValue,
           contract_months: project.contractMonths,
@@ -370,6 +380,7 @@ export function ProjectsPage() {
           user_id: userId,
           title: project.title,
           client: project.client,
+          description: project.notes,
           value: project.value,
           monthly_value: project.monthlyValue,
           contract_months: project.contractMonths,
@@ -479,6 +490,12 @@ export function ProjectsPage() {
                 <Input name="progress" defaultValue={editing.progress} type="number" min="0" max="100" placeholder={t("common.progress")} />
               </div>
               <Input name="labels" defaultValue={editing.labels.join(", ")} placeholder={t("projects.labelsPlaceholder")} />
+              <textarea
+                name="notes"
+                defaultValue={editing.notes}
+                placeholder={t("projects.notesPlaceholder")}
+                className="min-h-32 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              />
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setEditing(null)}>{t("common.cancel")}</Button>
                 <Button type="submit" disabled={saving}>{saving ? t("common.saving") : editing.id ? t("projects.saveProject") : t("projects.createProject")}</Button>

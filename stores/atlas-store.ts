@@ -29,6 +29,8 @@ type AtlasState = {
   updateTask: (task: Task) => void;
   addFinance: (record: FinanceRecord) => void;
   addVaultItem: (item: VaultItem) => void;
+  updateVaultItem: (item: VaultItem) => void;
+  removeVaultItem: (id: string) => void;
   logActivity: (activity: Omit<ActivityLog, "id" | "createdAt">) => void;
 };
 
@@ -78,7 +80,21 @@ export const useAtlasStore = create<AtlasState>()(
       addTask: (task) => set((state) => ({ tasks: [task, ...state.tasks] })),
       updateTask: (task) => set((state) => ({ tasks: state.tasks.map((item) => (item.id === task.id ? task : item)) })),
       addFinance: (record) => set((state) => ({ finances: [record, ...state.finances] })),
-      addVaultItem: (item) => set((state) => ({ vault: [item, ...state.vault] })),
+      addVaultItem: (item) =>
+        set((state) => ({
+          vault: [item, ...state.vault],
+          activities: [{ id: id("ac"), type: "vault", title: `${item.title} created`, detail: "Vault item added", createdAt: "Just now" }, ...state.activities],
+        })),
+      updateVaultItem: (item) =>
+        set((state) => ({
+          vault: state.vault.map((vaultItem) => (vaultItem.id === item.id ? item : vaultItem)),
+          activities: [{ id: id("ac"), type: "vault", title: `${item.title} updated`, detail: "Vault item changed", createdAt: "Just now" }, ...state.activities],
+        })),
+      removeVaultItem: (vaultItemId) =>
+        set((state) => ({
+          vault: state.vault.filter((item) => item.id !== vaultItemId),
+          activities: [{ id: id("ac"), type: "vault", title: "Vault item removed", detail: "Secure reference deleted", createdAt: "Just now" }, ...state.activities],
+        })),
       logActivity: (activity) =>
         set((state) => ({ activities: [{ id: id("ac"), createdAt: "Just now", ...activity }, ...state.activities] })),
     }),
@@ -97,7 +113,16 @@ export const useAtlasStore = create<AtlasState>()(
           };
         });
 
-        return { ...state, tasks };
+        const projects = (state.projects ?? initialProjects).map((project) => {
+          const seededProject = initialProjects.find((item) => item.id === project.id);
+
+          return {
+            ...project,
+            notes: project.notes ?? seededProject?.notes ?? "",
+          };
+        });
+
+        return { ...state, projects, tasks };
       },
     },
   ),

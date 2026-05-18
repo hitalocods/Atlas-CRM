@@ -21,6 +21,7 @@ export type Project = {
   id: string;
   title: string;
   client: string;
+  notes: string;
   value: number;
   monthlyValue: number;
   contractMonths: number;
