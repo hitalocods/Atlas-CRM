@@ -97,7 +97,7 @@ function ProjectCard({
       style={style}
       onMouseDown={() => onActivate(project.id)}
       onFocus={() => onActivate(project.id)}
-      className={`relative rounded-lg border border-border bg-card p-3 shadow-sm transition-colors hover:bg-accent/40 ${isDragging ? "scale-[1.01] shadow-lg" : ""} ${isActive ? "ring-1 ring-primary/40" : ""}`}
+      className={`relative rounded-lg border border-border bg-card p-3 shadow-sm transition-colors hover:bg-accent/40 ${isDragging ? "scale-[1.01] shadow-lg" : ""}`}
     >
       <div className="mb-2 flex items-start justify-between gap-2">
         <button
