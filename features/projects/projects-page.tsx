@@ -103,7 +103,7 @@ function ProjectCard({
       onFocus={() => onActivate(project.id)}
       className={`relative max-w-full overflow-hidden rounded-lg border border-border bg-card p-3 shadow-sm transition-colors hover:bg-accent/40 ${isDragging ? "scale-[1.01] shadow-lg" : ""}`}
     >
-      <div className="mb-2 flex items-start justify-between gap-2">
+      <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <button
           ref={setActivatorNodeRef}
           type="button"
@@ -114,7 +114,7 @@ function ProjectCard({
           <div className="truncate text-xs font-medium text-foreground">{project.title}</div>
           <div className="truncate text-[11px] text-muted-foreground">{project.client}</div>
         </button>
-        <div className="flex items-center gap-1">
+        <div className="flex min-w-0 flex-wrap items-center gap-1">
           <PriorityBadge priority={project.priority} label={priorityLabel} />
           <Button
             type="button"
@@ -161,9 +161,9 @@ function ProjectCard({
       <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-muted">
         <div className="h-full rounded-full bg-primary/70" style={{ width: `${project.progress}%` }} />
       </div>
-      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+      <div className="flex flex-col gap-2 text-[11px] text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
         <span className="flex min-w-0 items-center gap-1"><CalendarDays className="size-3 shrink-0" />{project.deadline}</span>
-        <span className="flex min-w-0 flex-wrap items-center justify-end gap-x-2 gap-y-1">
+        <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 sm:justify-end">
           <span className="flex items-center gap-1"><DollarSign className="size-3" />{formatCurrency(project.value ?? 0)}</span>
           <span className="flex items-center gap-1">{formatCurrency(project.monthlyValue ?? 0)}/{monthLabel}</span>
           <span className="flex items-center gap-1"><MessageSquare className="size-3" />{project.comments}</span>
@@ -202,10 +202,10 @@ function ProjectColumn({
   const { setNodeRef, isOver } = useDroppable({ id: column.id });
 
   return (
-    <Card ref={setNodeRef} className={`w-72 shrink-0 transition-colors ${isOver ? "bg-accent/30" : ""}`}>
+    <Card ref={setNodeRef} className={`w-full transition-colors md:w-72 md:shrink-0 ${isOver ? "bg-accent/30" : ""}`}>
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle>{column.title}</CardTitle>
+        <div className="flex min-w-0 items-center justify-between gap-2">
+          <CardTitle className="min-w-0 truncate">{column.title}</CardTitle>
           <ProjectStatusBadge status={column.id} label={statusLabel(column.id)} />
         </div>
         <CardDescription>{column.description} · {projects.length}</CardDescription>
@@ -576,7 +576,7 @@ export function ProjectsPage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-[1500px] flex-col gap-4">
+    <div className="mx-auto flex w-full max-w-[1500px] min-w-0 flex-col gap-4">
       <PageHeader
         eyebrow={t("projects.eyebrow")}
         title={t("projects.title")}
@@ -599,7 +599,7 @@ export function ProjectsPage() {
 
       {mounted ? (
         <DndContext sensors={sensors} onDragEnd={onDragEnd}>
-          <section className="flex gap-3 overflow-x-auto pb-2">
+          <section className="grid min-w-0 grid-cols-1 gap-3 pb-2 md:flex md:overflow-x-auto">
             {columns.map((column) => (
               <ProjectColumn
                 key={column.id}
@@ -626,9 +626,9 @@ export function ProjectsPage() {
           ) : null}
         </DndContext>
       ) : (
-        <section className="flex gap-3 overflow-x-auto pb-2">
+        <section className="grid min-w-0 grid-cols-1 gap-3 pb-2 md:flex md:overflow-x-auto">
           {columns.map((column) => (
-            <Card key={column.id} className="min-h-96 w-72 shrink-0" />
+            <Card key={column.id} className="min-h-96 w-full md:w-72 md:shrink-0" />
           ))}
         </section>
       )}
@@ -642,7 +642,7 @@ export function ProjectsPage() {
           {editing ? (
             <form action={submitProject} className="space-y-3">
               <Input name="title" defaultValue={editing.title} placeholder={t("projects.projectTitle")} required />
-              <select name="clientId" defaultValue={selectedClientId} required className="h-9 rounded-md border border-input bg-background px-3 text-sm">
+              <select name="clientId" defaultValue={selectedClientId} required className="h-9 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm">
                 <option value="">{t("projects.selectClient")}</option>
                 {clients.map((client) => (
                   <option key={client.id} value={client.id}>
@@ -657,12 +657,12 @@ export function ProjectsPage() {
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <Input name="contractMonths" defaultValue={editing.contractMonths} type="number" min="0" step="1" placeholder={t("projects.contractMonths")} />
-                <select name="status" defaultValue={editing.status} className="h-9 rounded-md border border-input bg-background px-3 text-sm">
+                <select name="status" defaultValue={editing.status} className="h-9 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm">
                   {columns.map((column) => <option key={column.id} value={column.id}>{column.title}</option>)}
                 </select>
               </div>
               <div className="grid gap-3 sm:grid-cols-3">
-                <select name="priority" defaultValue={editing.priority} className="h-9 rounded-md border border-input bg-background px-3 text-sm">
+                <select name="priority" defaultValue={editing.priority} className="h-9 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm">
                   <option value="low">{t("priority.low")}</option>
                   <option value="medium">{t("priority.medium")}</option>
                   <option value="high">{t("priority.high")}</option>
@@ -676,7 +676,7 @@ export function ProjectsPage() {
                 name="notes"
                 defaultValue={editing.notes}
                 placeholder={t("projects.notesPlaceholder")}
-                className="min-h-32 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                className="min-h-32 w-full min-w-0 rounded-md border border-input bg-background px-3 py-2 text-sm"
               />
               <DialogFooter>
                 {editing.id ? (

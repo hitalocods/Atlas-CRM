@@ -47,13 +47,13 @@ export function TopNav() {
   const setSidebarOpen = useUiStore((state) => state.setSidebarOpen);
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-background/92 px-3 backdrop-blur supports-[backdrop-filter]:bg-background/78 lg:px-4">
-      <div className="flex min-w-0 items-center gap-3">
+    <header className="sticky top-0 z-30 flex h-14 min-w-0 items-center justify-between gap-2 border-b border-border bg-background/92 px-3 backdrop-blur supports-[backdrop-filter]:bg-background/78 lg:px-4">
+      <div className="flex min-w-0 items-center gap-2 sm:gap-3">
         <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setSidebarOpen(true)}>
           <Menu className="size-4" />
           <span className="sr-only">Open navigation</span>
         </Button>
-        <Breadcrumb>
+        <Breadcrumb className="hidden min-w-0 min-[420px]:block">
           <BreadcrumbList>
             <BreadcrumbItem>Atlas</BreadcrumbItem>
             <BreadcrumbSeparator />
@@ -64,7 +64,7 @@ export function TopNav() {
         </Breadcrumb>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex min-w-0 shrink-0 items-center gap-1 sm:gap-2">
         <Button variant="command" size="sm" className="hidden min-w-64 justify-start text-muted-foreground md:flex" onClick={() => setCommandOpen(true)}>
           <Search className="size-3.5" />
           {t("shell.search")}

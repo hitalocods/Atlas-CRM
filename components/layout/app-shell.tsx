@@ -14,7 +14,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const setSidebarOpen = useUiStore((state) => state.setSidebarOpen);
 
   return (
-    <div className="min-h-dvh bg-background">
+    <div className="min-h-dvh min-w-0 bg-background">
       <div className="hidden lg:fixed lg:inset-y-0 lg:flex">
         <Sidebar />
       </div>
@@ -39,9 +39,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </Button>
       </div>
 
-      <div className="lg:pl-64">
+      <div className="min-w-0 lg:pl-64">
         <TopNav />
-        <main className="min-h-[calc(100dvh-3.5rem)] p-3 lg:p-4">{children}</main>
+        <main className="min-h-[calc(100dvh-3.5rem)] min-w-0 p-3 lg:p-4">{children}</main>
       </div>
 
       <CommandPalette />
