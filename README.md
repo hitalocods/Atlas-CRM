@@ -1,82 +1,55 @@
-# Atlas
+# Atlas Vault
 
-Premium personal operating system SaaS foundation for freelancers, creators, and project management.
+Atlas Vault e um organizador pessoal de projetos feito para rodar localmente com Next.js, TypeScript, Tailwind CSS, shadcn/ui, Prisma ORM e SQLite.
 
 ## Stack
 
-- Next.js 15 App Router
+- Next.js App Router
 - TypeScript
-- TailwindCSS v4
-- shadcn/ui-style component source
-- Supabase Auth
-- PostgreSQL
-- Zustand
-- dnd-kit
-- Recharts
+- Tailwind CSS
+- shadcn/ui local
+- SQLite
+- Prisma ORM
+- Lucide Icons
+- Framer Motion para animacoes leves
 
-## Modules
+## Funcionalidades
 
-- Advanced dashboard with widgets, activity, quick actions and productivity insight
-- CRM with client CRUD, tags, status, notes, revenue tracking, filters and search
-- Projects with kanban board, drag-and-drop, priorities, deadlines, progress, labels, comments and attachments
-- Tasks with reminders, priorities, project links and calendar-oriented views
-- Finance with income, expenses, pending payments, goals, categories and charts
-- Vault for links, credentials, API keys, snippets, docs and private references
-- Analytics with revenue, productivity, client and project completion reporting
-- Activity logs across project, task, payment, client and system events
-- Language toggle with English and Portuguese (Brazil) using local preference storage
+- Dashboard dark premium com sidebar, header, busca global e cards responsivos
+- CRUD de projetos com Server Actions
+- Favoritos, filtros por status e stack
+- Modal de detalhes e edicao do projeto
+- Snippets com cadastro, exclusao e copiar para area de transferencia
+- Seed inicial com Atlas Reserve, Arena Chapas, Trino, Eventos THE e Atlas Estoque
 
-## Internationalization
-
-Atlas ships with a lightweight i18n layer:
-
-- `lib/i18n/dictionaries.ts` stores translation keys
-- `providers/language-provider.tsx` exposes `useI18n()`
-- the language toggle lives in the top navigation
-- preference is saved in `localStorage` as `atlas-locale`
-
-## Getting Started
+## Como rodar
 
 ```bash
 npm install
+npx prisma migrate dev
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+Abra `http://localhost:3000`.
 
-## Supabase
+## Banco local
 
-1. Copy `.env.example` to `.env.local`.
-2. Add:
+O SQLite usa `DATABASE_URL="file:./dev.db"` em `.env`. O arquivo do banco fica dentro da pasta `prisma/` e nao deve ser versionado.
 
-```bash
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
-```
-
-3. Run `database/schema.sql` in the Supabase SQL editor.
-
-Without Supabase credentials, dashboard routes run in local demo mode so the product UI can be reviewed. After credentials are configured, dashboard routes require an authenticated Supabase session.
-
-## Project Structure
-
-```txt
-app/          App Router routes and layouts
-components/   reusable UI and shell components
-features/     feature-owned screens and actions
-services/     Supabase clients and integration code
-stores/       Zustand stores
-hooks/        client hooks
-providers/    app-level providers
-lib/          shared utilities
-types/        shared TypeScript types
-database/     SQL schema and migrations
-```
-
-## Verification
+## Scripts uteis
 
 ```bash
-npm run typecheck
+npm run prisma:generate
+npm run prisma:migrate
+npm run prisma:seed
 npm run build
+```
+
+## Estrutura
+
+```text
+app/                 Rotas, layout, estilos globais e Server Actions
+components/          Shell do dashboard, cards, modais, forms e UI shadcn
+lib/                 Prisma lazy singleton, tipos e utilitarios
+prisma/              Schema, migration e seed
 ```

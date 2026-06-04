@@ -1,0 +1,51 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Project {
+  id                String            @id @default(cuid())
+  name              String
+  client            String?
+  description       String
+  status            String            @default("Ideia")
+  stack             String            @default("")
+  githubUrl         String?
+  deployUrl         String?
+  notes             String?
+  favorite          Boolean           @default(false)
+  projectValue      Float?
+  maintenanceActive Boolean           @default(false)
+  maintenanceValue  Float?
+  paymentStatus     String?
+  nextPaymentDate   DateTime?
+  projectType       String?
+  lastUpdate        DateTime?
+  problemsSolved    String?
+  promptUsed        String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  timeline          ProjectTimeline[]
+}
+
+model Snippet {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  category  String   @default("Código")
+  tag       String?
+  favorite  Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model ProjectTimeline {
+  id        String   @id @default(cuid())
+  title     String
+  createdAt DateTime @default(now())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}

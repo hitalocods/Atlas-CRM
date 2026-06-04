@@ -1,8 +1,10 @@
 node_modules
 .next
 out
+dist
 .env
-.env*.local
-!.env.example
-*.tsbuildinfo
-next-env.d.ts
+.next-dev*.log
+*.db
+*.db-journal
+prisma/dev.db
+prisma/dev.db-journal

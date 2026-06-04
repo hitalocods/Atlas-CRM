@@ -1,18 +1,30 @@
 import type { Metadata } from "next";
-import { AppProviders } from "@/providers/app-providers";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
 export const metadata: Metadata = {
-  title: "Atlas",
-  description: "A premium personal operating system for professionals.",
+  title: "Atlas Vault",
+  description: "Organizador pessoal de projetos, stacks, links e snippets.",
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body>
-        <AppProviders>{children}</AppProviders>
-      </body>
+    <html lang="pt-BR" className={`${geistSans.variable} ${geistMono.variable} dark`}>
+      <body>{children}</body>
     </html>
   );
 }
